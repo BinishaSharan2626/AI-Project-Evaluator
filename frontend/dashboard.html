@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Evaluations - AI Project Evaluator</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=24">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-logo">
+            ✨ <span>AI Project Evaluator</span>
+        </div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/dashboard.html" style="color: var(--text-main); font-weight: 600;">Dashboard</a>
+            <a href="/submit-project.html">Submit</a>
+        </div>
+        <div class="nav-user">
+            <div id="userRoleBadge">User &middot; <span class="role-badge">Student</span></div>
+            <button class="btn-outline" onclick="window.location.href='/'">← Back to Home</button>
+            <button class="btn-outline" onclick="localStorage.removeItem('token'); window.location.href='/'">Logout</button>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <!-- Breadcrumb / Back button -->
+        <div style="margin-bottom: 20px;">
+            <button class="btn-outline" onclick="window.history.back()" style="font-size: 13px; padding: 6px 14px;">← Back</button>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+            <div>
+                <div class="badge" style="display: inline-block; margin-bottom: 8px;">📈 Progress tracking</div>
+                <h1 class="page-title">Your evaluations</h1>
+                <p class="page-subtitle" style="margin-bottom: 0;">Compare scores across revisions and benchmark against your own history.</p>
+            </div>
+            <button class="btn-primary" onclick="window.location.href='/submit-project.html'">Evaluate new project</button>
+        </div>
+
+        <div id="evaluationsContainer">
+            <div style="text-align: center; color: var(--text-muted); padding: 40px;">Loading your evaluations...</div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const role = localStorage.getItem('role') || 'Student';
+            document.getElementById('userRoleBadge').innerHTML = `User &middot; <span class="role-badge">${role.charAt(0).toUpperCase() + role.slice(1)}</span>`;
+            
+            const container = document.getElementById('evaluationsContainer');
+            const token = localStorage.getItem('token');
+
+            try {
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const response = await fetch('/api/projects/history', { headers });
+                if (!response.ok) {
+                    container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 40px;">Could not load evaluations.</div>';
+                    return;
+                }
+
+                const data = await response.json();
+                const projects = data.projects || [];
+
+                if (projects.length === 0) {
+                    container.innerHTML = `
+                        <div class="card" style="text-align: center; padding: 48px 24px;">
+                            <div style="font-size: 40px; margin-bottom: 16px;">📁</div>
+                            <h3 style="margin-bottom: 8px;">No Evaluations Found</h3>
+                            <p style="color: var(--text-muted); max-width: 400px; margin: 0 auto 24px auto;">You haven't submitted any projects yet. Submit your first project to receive instant AI scoring and improvement roadmaps.</p>
+                            <button class="btn-primary" onclick="window.location.href='/submit-project.html'">Submit a Project Now</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = '';
+                projects.forEach(project => {
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'project-group';
+
+                    const revCountText = project.revision_count === 1 ? '1 revision' : `${project.revision_count} revisions`;
+                    
+                    let revisionsHtml = '';
+                    (project.revisions || []).forEach(rev => {
+                        revisionsHtml += `
+                            <div class="revision-item">
+                                <div class="revision-info">
+                                    <h4 style="margin: 0 0 4px 0; font-size: 15px;">Revision #${rev.revision_number}</h4>
+                                    <p style="margin: 0; font-size: 12px; color: var(--text-muted);">${rev.created_at} &middot; <span style="text-transform: capitalize;">${rev.role}</span></p>
+                                </div>
+                                <div class="revision-score-wrapper">
+                                    <div class="revision-score">${rev.score}<span>/100</span></div>
+                                    <button class="btn-outline" onclick="window.location.href='/evaluation-result.html?id=${rev.id}'">View</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    groupDiv.innerHTML = `
+                        <div class="project-group-header">
+                            <div class="project-group-title">${project.title}</div>
+                            <div class="project-group-meta">${revCountText} &middot; latest ${project.latest_score}/100</div>
+                        </div>
+                        <div class="revisions-list">
+                            ${revisionsHtml}
+                        </div>
+                    `;
+
+                    container.appendChild(groupDiv);
+                });
+
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 40px;">Error loading evaluations.</div>';
+            }
+        });
+    </script>
+    <script src="/static/js/floating-background.js?v=7"></script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Project Evaluator</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=24">
+</head>
+<body style="overflow-x: hidden;">
+    <nav class="navbar animate-fade-in">
+        <div class="nav-logo">
+            ✨ <span>AI Project Evaluator</span>
+        </div>
+        <div class="nav-links">
+            <a href="#" style="color: var(--text-main); font-weight: 600;">Home</a>
+            <a href="/signup.html">Sign Up</a>
+            <a href="/admin-login.html">Admin</a>
+        </div>
+    </nav>
+    
+    <div class="hero-container">
+        <!-- Left Side: Animated Text & Features -->
+        <div class="hero-text animate-fade-in delay-100">
+            <div class="badge animate-float" style="display: inline-block; margin-bottom: 20px; background: rgba(6, 182, 212, 0.1); color: var(--accent-teal); border: 1px solid rgba(6, 182, 212, 0.2); padding: 8px 16px; border-radius: 20px; font-size: 14px;">🚀 Next-Gen Project Review</div>
+            
+            <h1 class="hero-title">Evaluate your code with<br><span class="typewriter-wrapper"><span class="typewriter-text" id="typewriterText">Explainable AI</span></span></h1>
+            
+            <p class="hero-subtitle">
+                Instantly generate detailed scoring rubrics, identify technical weaknesses, and get role-specific improvement roadmaps for students, managers, and developers.
+            </p>
+            
+            <div class="hero-features animate-fade-in delay-200">
+                <div class="hero-feature">
+                    <div class="hero-feature-icon">📊</div>
+                    Comprehensive Rubric Breakdowns
+                </div>
+                <div class="hero-feature">
+                    <div class="hero-feature-icon">🎯</div>
+                    Role-Specific Feedback (Student, Dev, Manager)
+                </div>
+                <div class="hero-feature">
+                    <div class="hero-feature-icon">📈</div>
+                    Track Revisions & Improvement History
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Login Form with floating animation -->
+        <div class="hero-form-wrapper animate-fade-in delay-300">
+            <div class="auth-container animate-float">
+                <h2>Welcome Back</h2>
+                <form id="loginForm" autocomplete="off">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" required placeholder="Enter your username" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" required placeholder="Enter your password" autocomplete="new-password">
+                    </div>
+                    <div id="loginError" class="error-msg"></div>
+                    <button type="submit" style="animation: pulse-glow 2s infinite;">Login to Dashboard</button>
+                </form>
+                <p>
+                    <a href="forgot-password.html" style="font-weight: 500;">Forgot Password?</a>
+                </p>
+                <div style="margin-top: 24px; text-align: center; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                    <p style="margin-bottom: 12px; color: var(--text-muted);">Don't have an account?</p>
+                    <button type="button" class="btn-primary animate-float" style="width: 100%; justify-content: center; animation-duration: 4s;" onclick="window.location.href='signup.html'">Create an Account ✨</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/auth.js?v=4"></script>
+    <script>
+        // Typewriter Effect for Hero Headline
+        document.addEventListener('DOMContentLoaded', () => {
+            const phrases = [
+                "Explainable AI",
+                "Smart Rubrics",
+                "Action Roadmaps",
+                "Role Insights",
+                "Instant Scoring",
+                "Quality Checks"
+            ];
+
+            let phraseIndex = 0;
+            let charIndex = phrases[0].length;
+            let isDeleting = true;
+            const targetElement = document.getElementById('typewriterText');
+
+            function runTypewriter() {
+                const currentPhrase = phrases[phraseIndex];
+
+                if (isDeleting) {
+                    charIndex--;
+                } else {
+                    charIndex++;
+                }
+
+                const currentText = currentPhrase.substring(0, charIndex);
+                targetElement.textContent = currentText.length > 0 ? currentText : '\u00A0';
+
+                let typingDelay = isDeleting ? 40 : 80;
+
+                if (!isDeleting && charIndex === currentPhrase.length) {
+                    typingDelay = 2200; // Pause when phrase is complete
+                    isDeleting = true;
+                } else if (isDeleting && charIndex === 0) {
+                    isDeleting = false;
+                    phraseIndex = (phraseIndex + 1) % phrases.length;
+                    typingDelay = 400; // Brief pause before typing next
+                }
+
+                setTimeout(runTypewriter, typingDelay);
+            }
+
+            setTimeout(runTypewriter, 1800);
+        });
+
+        // Always clear form fields on refresh or page show
+        window.addEventListener('pageshow', () => {
+            const form = document.getElementById('loginForm');
+            if (form) form.reset();
+            const u = document.getElementById('username');
+            const p = document.getElementById('password');
+            if (u) u.value = '';
+            if (p) p.value = '';
+        });
+    </script>
+    <script src="/static/js/floating-background.js?v=7"></script>
+</body>
+</html>

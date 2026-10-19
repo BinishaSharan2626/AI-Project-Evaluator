@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Project Evaluator - Sign Up</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=24">
+</head>
+<body style="overflow-x: hidden;">
+    <nav class="navbar animate-fade-in">
+        <div class="nav-logo">
+            ✨ <span>AI Project Evaluator</span>
+        </div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/signup.html" style="color: var(--text-main); font-weight: 600;">Sign Up</a>
+            <a href="/admin-login.html">Admin</a>
+        </div>
+        <div class="nav-user">
+            <button class="btn-outline" onclick="window.history.back()">← Back</button>
+            <button class="btn-outline" onclick="window.location.href='/'">Login</button>
+        </div>
+    </nav>
+    
+    <div class="hero-container">
+        <!-- Left Side: Animated Text & Features -->
+        <div class="hero-text animate-fade-in delay-100">
+            <div class="badge animate-float" style="display: inline-block; margin-bottom: 20px; background: rgba(139, 92, 246, 0.1); color: var(--accent-purple); border: 1px solid rgba(139, 92, 246, 0.2); padding: 8px 16px; border-radius: 20px; font-size: 14px;">✨ Join the Platform</div>
+            
+            <h1 class="hero-title">Start evaluating with<br><span class="typewriter-wrapper"><span class="typewriter-text" id="typewriterText">Intelligent AI</span></span></h1>
+            
+            <p class="hero-subtitle">
+                Create your account to unlock customized evaluations, benchmark scores against revisions, and receive role-specific guidance crafted for your workflow.
+            </p>
+            
+            <div class="hero-features animate-fade-in delay-200">
+                <div class="hero-feature">
+                    <div class="hero-feature-icon">🎓</div>
+                    Student Perspective: Scope, Rubrics & Project Refinements
+                </div>
+                <div class="hero-feature">
+                    <div class="hero-feature-icon">💼</div>
+                    Manager Perspective: Business Viability & Market Impact
+                </div>
+                <div class="hero-feature">
+                    <div class="hero-feature-icon">💻</div>
+                    Developer Perspective: Architecture & Codebase Scaling
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Signup Form with floating animation -->
+        <div class="hero-form-wrapper animate-fade-in delay-300">
+            <div class="auth-container animate-float">
+                <div style="margin-bottom: 12px;">
+                    <button type="button" class="btn-outline" onclick="window.history.back()" style="font-size: 13px; padding: 5px 12px;">← Back</button>
+                </div>
+                <h2>Create Account</h2>
+                <form id="signupForm">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" required placeholder="Choose a username">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" required placeholder="Enter your email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="role">Role</label>
+                        <select id="role" required>
+                            <option value="" disabled selected>Select a role...</option>
+                            <option value="student">Student</option>
+                            <option value="manager">Manager / Recruiter / TL</option>
+                            <option value="developer">Developer / Software Engineer</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" required placeholder="Create a password">
+                        <div class="password-strength">
+                            Strength: <span id="strengthText">None</span>
+                            <div class="strength-bar" id="strengthBar"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input type="password" id="confirmPassword" required placeholder="Confirm your password">
+                        <div id="passwordMatchError" class="error-msg"></div>
+                    </div>
+                    
+                    <div id="signupError" class="error-msg"></div>
+                    <button type="submit" id="signupBtn" disabled>Sign Up</button>
+                </form>
+                <div style="margin-top: 24px; text-align: center; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                    <p style="margin-bottom: 12px; color: var(--text-muted);">Already have an account?</p>
+                    <button type="button" class="btn-primary animate-float" style="width: 100%; justify-content: center; animation-duration: 4s;" onclick="window.location.href='/'">Login to Dashboard 🚀</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/auth.js?v=4"></script>
+    <script>
+        // Typewriter Effect for Signup Hero Headline (No cursor)
+        document.addEventListener('DOMContentLoaded', () => {
+            const phrases = [
+                "Intelligent AI",
+                "Personalized Feedback",
+                "Actionable Roadmaps",
+                "Structured Rubrics",
+                "Role-Specific Scoring",
+                "Career Growth Insights"
+            ];
+
+            let phraseIndex = 0;
+            let charIndex = phrases[0].length;
+            let isDeleting = true;
+            const targetElement = document.getElementById('typewriterText');
+
+            function runTypewriter() {
+                const currentPhrase = phrases[phraseIndex];
+
+                if (isDeleting) {
+                    charIndex--;
+                } else {
+                    charIndex++;
+                }
+
+                const currentText = currentPhrase.substring(0, charIndex);
+                targetElement.textContent = currentText.length > 0 ? currentText : '\u00A0';
+
+                let typingDelay = isDeleting ? 40 : 80;
+
+                if (!isDeleting && charIndex === currentPhrase.length) {
+                    typingDelay = 2200; // Pause when phrase is complete
+                    isDeleting = true;
+                } else if (isDeleting && charIndex === 0) {
+                    isDeleting = false;
+                    phraseIndex = (phraseIndex + 1) % phrases.length;
+                    typingDelay = 400; // Brief pause before typing next
+                }
+
+                setTimeout(runTypewriter, typingDelay);
+            }
+
+            setTimeout(runTypewriter, 1800);
+        });
+    </script>
+    <script src="/static/js/floating-background.js?v=7"></script>
+</body>
+</html>

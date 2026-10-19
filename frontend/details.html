@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Details Collection</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="auth-container" style="max-width: 600px;">
+        <h2>Complete Your Profile</h2>
+        <p>Selected Role: <strong id="displayRole"></strong></p>
+        <form>
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" required>
+            </div>
+            <button type="submit">Save Details</button>
+        </form>
+    </div>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const role = urlParams.get('role');
+        document.getElementById('displayRole').textContent = role ? role.toUpperCase() : 'Unknown';
+    </script>
+</body>
+</html>

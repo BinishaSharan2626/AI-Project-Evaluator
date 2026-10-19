@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Project Evaluator - Submit Project</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=24">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-logo">
+            ✨ <span>AI Project Evaluator</span>
+        </div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/dashboard.html">Dashboard</a>
+            <a href="/admin-login.html">Admin</a>
+        </div>
+        <div class="nav-user">
+            <button class="btn-outline" onclick="window.history.back()">← Back</button>
+            <button class="btn-outline" onclick="localStorage.removeItem('token'); window.location.href='/'">Logout</button>
+        </div>
+    </nav>
+    <div class="main-content" style="display: flex; justify-content: center; align-items: center; min-height: 80vh; flex-direction: column;">
+        <div class="auth-container" style="margin: 0; max-width: 600px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <button type="button" class="btn-outline" onclick="window.history.back()" style="font-size: 13px; padding: 6px 14px;">← Back</button>
+                <span class="badge">Project Submission</span>
+            </div>
+            <h2>Submit Project for Evaluation</h2>
+            <form id="projectForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="title">Project Title</label>
+                    <input type="text" id="title" required placeholder="e.g., E-Commerce Recommendation Engine">
+                </div>
+
+                <div class="form-group">
+                    <label for="evaluationRole">Evaluate Project As:</label>
+                    <select id="evaluationRole" required>
+                        <option value="student">Student (Focus on learning & scope)</option>
+                        <option value="manager">Manager / Recruiter (Focus on business value)</option>
+                        <option value="developer">Developer (Focus on technical improvements)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Project Description & Problem Statement</label>
+                    <textarea id="description" rows="5" required style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;" placeholder="Describe what the project does, key architecture, and problem solved..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="projectFiles">Upload Project Files (ZIP or multiple files)</label>
+                    <input type="file" id="projectFiles" multiple>
+                </div>
+                
+                <div id="submitMessage" class="success-msg"></div>
+                <div id="submitError" class="error-msg"></div>
+                <button type="submit" id="submitBtn">Submit for Evaluation</button>
+            </form>
+            <div style="margin-top: 18px; text-align: center;">
+                <button type="button" class="btn-outline" style="width: 100%; justify-content: center;" onclick="window.location.href='/dashboard.html'">← Back to Dashboard</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('projectForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submitBtn');
+            const msgDiv = document.getElementById('submitMessage');
+            const errorDiv = document.getElementById('submitError');
+            
+            btn.disabled = true;
+            btn.textContent = 'Evaluating with AI... Please wait.';
+            msgDiv.textContent = '';
+            errorDiv.textContent = '';
+            
+            const formData = new FormData();
+            formData.append('title', document.getElementById('title').value);
+            formData.append('description', document.getElementById('description').value);
+            formData.append('evaluation_role', document.getElementById('evaluationRole').value);
+            
+            const files = document.getElementById('projectFiles').files;
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                errorDiv.textContent = 'Please log in first before submitting a project.';
+                btn.disabled = false;
+                btn.textContent = 'Submit for Evaluation';
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1500);
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/projects/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    msgDiv.textContent = 'Project submitted and evaluated successfully! Redirecting...';
+                    setTimeout(() => {
+                        window.location.href = `evaluation-result.html?id=${data.evaluation_id}`;
+                    }, 1200);
+                } else {
+                    let errMsg = 'Evaluation failed. Please try again.';
+                    try {
+                        const err = await response.json();
+                        errMsg = err.detail || errMsg;
+                    } catch (e) {
+                        errMsg = `Server error (${response.status}).`;
+                    }
+                    errorDiv.textContent = errMsg;
+                    btn.disabled = false;
+                    btn.textContent = 'Submit for Evaluation';
+                }
+            } catch (error) {
+                console.error(error);
+                errorDiv.textContent = 'Could not reach server. Please check your connection.';
+                btn.disabled = false;
+                btn.textContent = 'Submit for Evaluation';
+            }
+        });
+    </script>
+    <script src="/static/js/floating-background.js?v=7"></script>
+</body>
+</html>

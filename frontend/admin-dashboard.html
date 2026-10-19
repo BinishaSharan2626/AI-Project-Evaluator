@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Console - AI Project Evaluator</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=24">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-logo">
+            ✨ <span>AI Project Evaluator</span>
+        </div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/dashboard.html">Dashboard</a>
+            <a href="/admin-dashboard.html" style="color: var(--text-main); font-weight: 600;">Admin</a>
+        </div>
+        <div class="nav-user">
+            <div>Administrator &middot; <span class="role-badge" style="color: var(--accent-purple);">Admin</span></div>
+            <button class="btn-outline" onclick="window.location.href='/'">← Back to Home</button>
+            <button class="btn-outline" onclick="localStorage.removeItem('token'); window.location.href='/'">Logout</button>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <!-- Back navigation button -->
+        <div style="margin-bottom: 20px;">
+            <button class="btn-outline" onclick="window.history.back()" style="font-size: 13px; padding: 6px 14px;">← Back</button>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+            <div>
+                <div class="badge" style="display: inline-block; margin-bottom: 8px;">🛡️ Admin console</div>
+                <h1 class="page-title">Users & activity</h1>
+                <p class="page-subtitle" style="margin-bottom: 0;">Registered accounts and recent project evaluations across the platform.</p>
+            </div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <button class="btn-outline" id="refreshBtn" onclick="manualRefresh()" style="display: flex; align-items: center; gap: 6px;" title="Refresh live statistics">
+                    <span id="refreshIcon" style="display: inline-block; transition: transform 0.6s ease;">🔄</span> Refresh
+                </button>
+                <button class="btn-primary" style="background: var(--gradient-primary);" onclick="openRubricModal()">Configure rubric weightages</button>
+                <button class="btn-outline" id="queueBtn" onclick="toggleView('queue')">Evaluation queue</button>
+            </div>
+        </div>
+
+        <!-- 4 Top-level Stat Cards (Clickable) -->
+        <div class="stats-grid">
+            <div class="stat-card" onclick="showRoleUsers('student')" title="Click to view all registered students">
+                <div class="stat-header" style="justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <svg fill="currentColor" viewBox="0 0 20 20" style="width: 18px; height: 18px;"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
+                        Students
+                    </div>
+                    <span style="font-size: 11px; color: var(--accent-purple); font-weight: 600;">View list &rarr;</span>
+                </div>
+                <div class="stat-value" id="studentsCount">0</div>
+            </div>
+
+            <div class="stat-card" onclick="showRoleUsers('manager')" title="Click to view all registered managers">
+                <div class="stat-header" style="justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <svg fill="currentColor" viewBox="0 0 20 20" style="width: 18px; height: 18px;"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
+                        Managers / TL
+                    </div>
+                    <span style="font-size: 11px; color: var(--accent-purple); font-weight: 600;">View list &rarr;</span>
+                </div>
+                <div class="stat-value" id="managersCount">0</div>
+            </div>
+
+            <div class="stat-card" onclick="showRoleUsers('developer')" title="Click to view all registered developers">
+                <div class="stat-header" style="justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <svg fill="currentColor" viewBox="0 0 20 20" style="width: 18px; height: 18px;"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
+                        Developers
+                    </div>
+                    <span style="font-size: 11px; color: var(--accent-purple); font-weight: 600;">View list &rarr;</span>
+                </div>
+                <div class="stat-value" id="developersCount">0</div>
+            </div>
+
+            <div class="stat-card" onclick="toggleView('queue')" title="Click to view full evaluation queue">
+                <div class="stat-header" style="justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <svg fill="currentColor" viewBox="0 0 20 20" style="width: 18px; height: 18px;"><path fill-rule="evenodd" d="M13 10V3L4 14h7v7l9-11h-7z" clip-rule="evenodd"></path></svg>
+                        Evaluations Run
+                    </div>
+                    <span style="font-size: 11px; color: var(--accent-teal); font-weight: 600;">View queue &rarr;</span>
+                </div>
+                <div class="stat-value" id="evaluationsCount">0</div>
+            </div>
+        </div>
+
+        <!-- Section 1: Recent Platform Activity -->
+        <div class="project-group" id="activitySection">
+            <div class="project-group-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="project-group-title">Recent platform activity</div>
+                <span class="badge" id="activityBadge">Live Feed</span>
+            </div>
+            <div id="activityList">
+                <div style="text-align: center; color: var(--text-muted); padding: 30px;">Loading live admin data...</div>
+            </div>
+        </div>
+
+        <!-- Section 2: Evaluation Queue (Toggled by Button) -->
+        <div class="project-group" id="queueSection" style="display: none;">
+            <div class="project-group-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div class="project-group-title">Evaluation queue & submission audit</div>
+                    <div class="project-group-meta">All projects registered in the evaluation pipeline</div>
+                </div>
+                <button class="btn-outline" style="font-size: 12px; padding: 4px 10px;" onclick="toggleView('activity')">← Back to Activity</button>
+            </div>
+            <div id="queueList">
+                <div style="text-align: center; color: var(--text-muted); padding: 30px;">Loading evaluation queue...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registered Users Modal (Triggered by Clicking Stat Cards) -->
+    <div id="usersModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(5px); z-index: 1000; justify-content: center; align-items: center; padding: 20px;">
+        <div class="card" style="max-width: 820px; width: 100%; max-height: 85vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; box-shadow: var(--shadow-lg);">
+            <!-- Modal Header -->
+            <div style="padding: 20px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.9);">
+                <div>
+                    <h3 id="usersModalTitle" style="margin: 0; font-size: 18px;">Registered Users</h3>
+                    <p id="usersModalSubtitle" style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted);">Accounts registered under this role</p>
+                </div>
+                <button class="btn-outline" style="border: none; font-size: 20px; padding: 4px 10px; cursor: pointer;" onclick="closeUsersModal()">✕</button>
+            </div>
+            
+            <!-- Search & Filter bar -->
+            <div style="padding: 16px 24px; border-bottom: 1px solid var(--border-color); background: var(--bg-card); display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="userSearchInput" placeholder="Search by username or email..." style="flex: 1; min-width: 200px; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 14px;" oninput="filterUsersList()">
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <button class="btn-outline" id="filterBtnAll" style="font-size: 12px; padding: 6px 12px;" onclick="showRoleUsers('all')">All</button>
+                    <button class="btn-outline" id="filterBtnStudent" style="font-size: 12px; padding: 6px 12px;" onclick="showRoleUsers('student')">Students</button>
+                    <button class="btn-outline" id="filterBtnManager" style="font-size: 12px; padding: 6px 12px;" onclick="showRoleUsers('manager')">Managers</button>
+                    <button class="btn-outline" id="filterBtnDeveloper" style="font-size: 12px; padding: 6px 12px;" onclick="showRoleUsers('developer')">Devs</button>
+                    <button class="btn-outline" id="filterBtnAdmin" style="font-size: 12px; padding: 6px 12px;" onclick="showRoleUsers('admin')">Admins</button>
+                </div>
+            </div>
+
+            <!-- Users List Container -->
+            <div id="usersModalList" style="overflow-y: auto; padding: 20px 24px; flex: 1;">
+                <!-- Populated dynamically -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div style="padding: 14px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.9);">
+                <span id="usersModalCount" style="font-size: 13px; color: var(--text-muted);">0 users found</span>
+                <button class="btn-primary" style="padding: 8px 18px;" onclick="closeUsersModal()">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configure Rubric Weightages Modal -->
+    <div id="rubricModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="auth-container" style="max-width: 500px; width: 90%; margin: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;">Configure Rubric Weightages</h3>
+                <button class="btn-outline" style="border: none; font-size: 18px; padding: 4px 8px;" onclick="closeRubricModal()">✕</button>
+            </div>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Adjust the percentage weight assigned to each rubric dimension during AI grading:</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-weight: 500; font-size: 14px;">Innovation & Originality</label>
+                    <span style="font-weight: 600; color: var(--accent-purple);">20%</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-weight: 500; font-size: 14px;">Technical Complexity</label>
+                    <span style="font-weight: 600; color: var(--accent-purple);">20%</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-weight: 500; font-size: 14px;">Feasibility & Execution</label>
+                    <span style="font-weight: 600; color: var(--accent-purple);">15%</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-weight: 500; font-size: 14px;">Architecture Scalability</label>
+                    <span style="font-weight: 600; color: var(--accent-purple);">15%</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-weight: 500; font-size: 14px;">Business & Market Value</label>
+                    <span style="font-weight: 600; color: var(--accent-purple);">15%</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-weight: 500; font-size: 14px;">Presentation & Clarity</label>
+                    <span style="font-weight: 600; color: var(--accent-purple);">15%</span>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button class="btn-outline" onclick="closeRubricModal()">Cancel</button>
+                <button class="btn-primary" onclick="saveRubricModal()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let adminData = null;
+        let currentRoleFilter = 'student';
+
+        async function loadAdminDashboard() {
+            try {
+                const response = await fetch('/api/admin/stats');
+                if (!response.ok) {
+                    document.getElementById('activityList').innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 30px;">Failed to load statistics.</div>';
+                    return;
+                }
+
+                adminData = await response.json();
+
+                // Update Stat Counts
+                const counts = adminData.counts || {};
+                document.getElementById('studentsCount').textContent = counts.students || 0;
+                document.getElementById('managersCount').textContent = counts.managers || 0;
+                document.getElementById('developersCount').textContent = counts.developers || 0;
+                document.getElementById('evaluationsCount').textContent = counts.evaluations || 0;
+
+                // Render Recent Activity
+                renderActivity(adminData.activity || []);
+
+                // Render Queue
+                renderQueue(adminData.queue || []);
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('activityList').innerHTML = '<div style="text-align: center; color: #ef4444; padding: 30px;">Error connecting to admin statistics service.</div>';
+            }
+        }
+
+        // ================= USER MODAL LOGIC =================
+        function showRoleUsers(role) {
+            currentRoleFilter = role;
+            const modal = document.getElementById('usersModal');
+            const searchInput = document.getElementById('userSearchInput');
+            searchInput.value = '';
+
+            // Update active state of filter buttons
+            const filterBtns = ['All', 'Student', 'Manager', 'Developer', 'Admin'];
+            filterBtns.forEach(b => {
+                const btn = document.getElementById(`filterBtn${b}`);
+                if (btn) {
+                    if (b.toLowerCase() === role.toLowerCase() || (b === 'Developer' && role === 'developer') || (b === 'Admin' && role === 'admin')) {
+                        btn.style.borderColor = 'var(--accent-purple)';
+                        btn.style.color = 'var(--accent-purple)';
+                        btn.style.fontWeight = '600';
+                    } else {
+                        btn.style.borderColor = 'var(--border-color)';
+                        btn.style.color = 'var(--text-main)';
+                        btn.style.fontWeight = 'normal';
+                    }
+                }
+            });
+
+            // Update modal titles
+            const roleLabels = {
+                student: 'Registered Students',
+                manager: 'Registered Managers / TL',
+                developer: 'Registered Developers',
+                admin: 'Platform Administrators',
+                all: 'All Registered Platform Users'
+            };
+            document.getElementById('usersModalTitle').textContent = roleLabels[role] || 'Registered Users';
+            document.getElementById('usersModalSubtitle').textContent = `Listing accounts registered under the ${role === 'all' ? 'platform' : role} category`;
+
+            renderUsersList();
+            modal.style.display = 'flex';
+        }
+
+        function filterUsersList() {
+            renderUsersList();
+        }
+
+        function renderUsersList() {
+            const container = document.getElementById('usersModalList');
+            const countLabel = document.getElementById('usersModalCount');
+            const query = (document.getElementById('userSearchInput').value || '').toLowerCase().trim();
+
+            if (!adminData || !adminData.users) {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 30px;">No user records loaded.</div>';
+                countLabel.textContent = '0 users found';
+                return;
+            }
+
+            const roleUsers = adminData.users[currentRoleFilter] || [];
+            const filtered = roleUsers.filter(u => {
+                return u.username.toLowerCase().includes(query) || u.email.toLowerCase().includes(query);
+            });
+
+            countLabel.textContent = `${filtered.length} user${filtered.length === 1 ? '' : 's'} found`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                        <div style="font-size: 32px; margin-bottom: 8px;">👤</div>
+                        <p style="margin: 0; font-size: 14px;">No users match your search criteria in this category.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = '';
+            filtered.forEach(u => {
+                const initial = (u.username || 'U').charAt(0).toUpperCase();
+                const card = document.createElement('div');
+                card.className = 'revision-item';
+                card.style.marginBottom = '12px';
+                card.style.display = 'flex';
+                card.style.justifyContent = 'space-between';
+                card.style.alignItems = 'center';
+                card.style.padding = '14px 18px';
+
+                card.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--gradient-subtle); color: var(--accent-purple); font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 1px solid rgba(139, 92, 246, 0.2);">
+                            ${initial}
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <strong style="font-size: 15px; color: var(--text-main);">${u.username}</strong>
+                                <span class="role-badge" style="font-size: 11px; text-transform: capitalize;">${u.role}</span>
+                                ${u.is_staff ? '<span class="badge" style="background: rgba(139, 92, 246, 0.1); color: var(--accent-purple); font-size: 10px; padding: 2px 8px;">Staff Admin</span>' : ''}
+                            </div>
+                            <div style="font-size: 12.5px; color: var(--text-muted); margin-top: 3px;">
+                                ✉️ ${u.email} &middot; 📅 Registered: ${u.date_joined}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="badge" style="font-size: 12px; padding: 6px 12px; background: rgba(6, 182, 212, 0.1); color: var(--accent-teal); border: 1px solid rgba(6, 182, 212, 0.2);">
+                            ${u.projects_count} Project${u.projects_count === 1 ? '' : 's'}
+                        </span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function closeUsersModal() {
+            document.getElementById('usersModal').style.display = 'none';
+        }
+
+        // Close on Escape or Backdrop click
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeUsersModal();
+                closeRubricModal();
+            }
+        });
+        document.getElementById('usersModal').addEventListener('click', (e) => {
+            if (e.target.id === 'usersModal') closeUsersModal();
+        });
+
+        // ================= ACTIVITY & QUEUE =================
+        function renderActivity(activityList) {
+            const container = document.getElementById('activityList');
+            if (activityList.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 30px;">No platform evaluations recorded yet.</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            activityList.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'revision-item';
+                itemDiv.innerHTML = `
+                    <div class="revision-info">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                            <h4 style="margin: 0; font-size: 15px;">${item.project_title}</h4>
+                            <span class="role-badge" style="text-transform: capitalize; font-size: 11px;">${item.evaluation_role}</span>
+                        </div>
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted);">
+                            By <strong>${item.username}</strong> &middot; ${item.created_at} &middot; <span style="color: #10b981; font-weight: 500;">● ${item.status}</span>
+                        </p>
+                    </div>
+                    <div class="revision-score-wrapper" style="display: flex; align-items: center; gap: 8px;">
+                        <div class="revision-score">${item.score}<span>/100</span></div>
+                        <button class="btn-outline" onclick="window.location.href='/evaluation-result.html?id=${item.evaluation_id}'">View Result</button>
+                        <button class="btn-outline" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); padding: 6px 12px; font-size: 13px;" title="Delete this evaluation" onclick="deleteEvaluation(${item.evaluation_id}, '${item.project_title.replace(/'/g, "\\'")}')">🗑️ Delete</button>
+                    </div>
+                `;
+                container.appendChild(itemDiv);
+            });
+        }
+
+        function renderQueue(queueList) {
+            const container = document.getElementById('queueList');
+            if (queueList.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 30px;">No projects currently in queue.</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            queueList.forEach((q, idx) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'revision-item';
+                const hasEval = q.evaluation_id !== null;
+                itemDiv.innerHTML = `
+                    <div class="revision-info">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                            <span style="font-weight: 700; color: var(--text-muted);">#${idx + 1}</span>
+                            <h4 style="margin: 0; font-size: 15px;">${q.title}</h4>
+                            <span class="role-badge" style="text-transform: capitalize; font-size: 11px;">${q.role}</span>
+                        </div>
+                        <p style="margin: 0; font-size: 12px; color: var(--text-muted);">
+                            Submitted by <strong>${q.username}</strong> &middot; ${q.created_at} &middot; 
+                            <span style="color: ${hasEval ? '#10b981' : '#06b6d4'}; font-weight: 600;">● ${q.status}</span>
+                        </p>
+                    </div>
+                    <div class="revision-score-wrapper" style="display: flex; align-items: center; gap: 8px;">
+                        <div class="revision-score">${q.score}${hasEval ? '<span>/100</span>' : ''}</div>
+                        ${hasEval ? `
+                            <button class="btn-outline" onclick="window.location.href='/evaluation-result.html?id=${q.evaluation_id}'">Inspect</button>
+                            <button class="btn-outline" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); padding: 6px 12px; font-size: 13px;" title="Delete this evaluation" onclick="deleteEvaluation(${q.evaluation_id}, '${q.title.replace(/'/g, "\\'")}')">🗑️ Delete</button>
+                        ` : `
+                            <button class="btn-primary" style="font-size: 12px; padding: 6px 12px;" onclick="window.location.href='/submit-project.html'">Process</button>
+                            <button class="btn-outline" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); padding: 6px 12px; font-size: 13px;" title="Delete this project from queue" onclick="deleteProject(${q.project_id}, '${q.title.replace(/'/g, "\\'")}')">🗑️ Delete</button>
+                        `}
+                    </div>
+                `;
+                container.appendChild(itemDiv);
+            });
+        }
+
+        async function deleteEvaluation(evalId, title) {
+            if (!confirm(`Are you sure you want to permanently delete the evaluation for "${title}"?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/evaluations/${evalId}/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    showAdminToast(`Evaluation for "${title}" deleted successfully.`);
+                    loadAdminDashboard();
+                } else {
+                    const err = await response.json();
+                    alert(err.detail || 'Failed to delete evaluation.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Network error while deleting evaluation.');
+            }
+        }
+
+        async function deleteProject(projectId, title) {
+            if (!confirm(`Are you sure you want to permanently remove "${title}" from the evaluation pipeline?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/projects/${projectId}/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    showAdminToast(`Project "${title}" deleted from queue.`);
+                    loadAdminDashboard();
+                } else {
+                    const err = await response.json();
+                    alert(err.detail || 'Failed to delete project.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Network error while deleting project.');
+            }
+        }
+
+        let refreshDeg = 0;
+        async function manualRefresh() {
+            const icon = document.getElementById('refreshIcon');
+            refreshDeg += 360;
+            if (icon) {
+                icon.style.transform = `rotate(${refreshDeg}deg)`;
+            }
+            await loadAdminDashboard();
+            showAdminToast('Dashboard refreshed with latest data.');
+        }
+
+        function showAdminToast(msg) {
+            let toast = document.getElementById('adminToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'adminToast';
+                toast.style.cssText = 'position: fixed; bottom: 24px; right: 24px; background: #0f172a; color: #ffffff; padding: 12px 20px; border-radius: 8px; box-shadow: var(--shadow-lg); z-index: 2000; font-size: 14px; display: flex; align-items: center; gap: 8px; border-left: 4px solid #10b981; transition: opacity 0.3s;';
+                document.body.appendChild(toast);
+            }
+            toast.textContent = '✓ ' + msg;
+            toast.style.display = 'flex';
+            toast.style.opacity = '1';
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => { toast.style.display = 'none'; }, 300);
+            }, 3000);
+        }
+
+        function toggleView(view) {
+            const actSec = document.getElementById('activitySection');
+            const queueSec = document.getElementById('queueSection');
+            const queueBtn = document.getElementById('queueBtn');
+
+            if (view === 'queue') {
+                actSec.style.display = 'none';
+                queueSec.style.display = 'block';
+                queueBtn.textContent = 'Activity Feed';
+                queueBtn.setAttribute('onclick', "toggleView('activity')");
+                queueSec.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                actSec.style.display = 'block';
+                queueSec.style.display = 'none';
+                queueBtn.textContent = 'Evaluation queue';
+                queueBtn.setAttribute('onclick', "toggleView('queue')");
+                actSec.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        function openRubricModal() {
+            const modal = document.getElementById('rubricModal');
+            modal.style.display = 'flex';
+        }
+
+        function closeRubricModal() {
+            const modal = document.getElementById('rubricModal');
+            modal.style.display = 'none';
+        }
+
+        function saveRubricModal() {
+            alert('Rubric weightages saved successfully! New evaluations will apply these weights.');
+            closeRubricModal();
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAdminDashboard);
+    </script>
+    <script src="/static/js/floating-background.js?v=7"></script>
+</body>
+</html>

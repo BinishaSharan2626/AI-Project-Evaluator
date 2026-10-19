@@ -1,0 +1,19 @@
+# Virtual Environment
+venv/
+env/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Static collection output (built by Render on build)
+staticfiles/
+
+# Environment secrets
+.env
+
+# OS metadata
+.DS_Store
+Thumbs.db

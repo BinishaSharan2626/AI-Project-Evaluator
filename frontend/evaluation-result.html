@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluation Result - AI Project Evaluator</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=24">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-logo">
+            ✨ <span>AI Project Evaluator</span>
+        </div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/dashboard.html">Dashboard</a>
+            <a href="/submit-project.html">Submit New</a>
+        </div>
+        <div class="nav-user">
+            <button class="btn-outline" onclick="window.history.back()">← Back</button>
+            <button class="btn-outline" onclick="window.location.href='/dashboard.html'">Dashboard</button>
+            <button class="btn-primary" onclick="window.location.href='/submit-project.html'">+ New Submission</button>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <div style="margin-bottom: 20px;">
+            <button class="btn-outline" onclick="window.history.back()" style="font-size: 13px; padding: 6px 14px;">← Back</button>
+        </div>
+        <h1 class="page-title">Evaluation for <span id="projectTitleDisplay">Loading...</span></h1>
+        <p class="page-subtitle">Role Perspective: <span id="projectRoleDisplay" style="text-transform: capitalize; font-weight: 600; color: var(--accent-teal);">...</span></p>
+
+        <!-- Score Card -->
+        <div class="score-card">
+            <div class="score-circle">🏆</div>
+            <div class="score-details">
+                <h3>Overall Score</h3>
+                <span class="score-number" id="overallScoreDisplay">--</span><span class="score-total">/100</span>
+            </div>
+        </div>
+
+        <!-- Rubric Breakdown -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">📋</div>
+                Rubric breakdown (explainable score)
+            </div>
+            <div id="rubricContainer">
+                <div style="color: var(--text-muted); font-size: 14px;">Loading rubric...</div>
+            </div>
+        </div>
+
+        <!-- Role-Specific Feedback Card (Student / Manager / Developer) -->
+        <div class="card" id="roleViewCard" style="display: none;">
+            <div class="card-header">
+                <div class="card-icon" style="color: var(--accent-teal); background: rgba(6, 182, 212, 0.1);">💡</div>
+                <span id="roleViewTitle">Role-Specific View</span>
+            </div>
+            <div id="roleViewContent" style="font-size: 14.5px; line-height: 1.6; color: var(--text-main);">
+                <!-- Dynamic role feedback -->
+            </div>
+        </div>
+
+        <!-- Strengths & Weaknesses (Grid) -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+            <div class="list-card" style="margin-bottom: 0;">
+                <div class="card-header">
+                    <div class="card-icon" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">✨</div>
+                    Strengths
+                </div>
+                <ul id="strengthsList">
+                    <li>Loading...</li>
+                </ul>
+            </div>
+            <div class="list-card" style="margin-bottom: 0;">
+                <div class="card-header">
+                    <div class="card-icon" style="color: #ef4444; background: rgba(239, 68, 68, 0.1);">⚠️</div>
+                    Weaknesses
+                </div>
+                <ul id="weaknessesList">
+                    <li>Loading...</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Improvement Roadmap -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">🔧</div>
+                Improvement roadmap (prioritised by impact)
+            </div>
+            <div id="roadmapContainer">
+                <div style="color: var(--text-muted); font-size: 14px;">Loading roadmap...</div>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 16px; margin-top: 32px;">
+            <button class="btn-primary" onclick="window.location.href='/submit-project.html'">Submit a revision</button>
+            <button class="btn-outline" onclick="window.location.href='/'">Return to Home</button>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const evalId = urlParams.get('id');
+
+            if (!evalId) {
+                document.getElementById('projectTitleDisplay').textContent = 'No ID Specified';
+                return;
+            }
+
+            // Contextual explanations fallback if an older record has no reason field
+            const fallbackReasons = {
+                innovation: "The core concept introduces practical functionality, but relies on common prompt generation and needs more unique evaluation logic to stand out.",
+                technical_complexity: "Demonstrates sound full-stack implementation with backend endpoints, AI integration, and a web frontend, showing moderate complexity.",
+                feasibility: "The project is realistic and functional as a prototype because core requirements can be achieved through structured API calls and standard workflows.",
+                scalability: "Scalability is currently constrained by synchronous execution, database session design, and response latency from third-party services.",
+                business_value: "The tool has strong practical utility for candidates and evaluators, but needs clearer monetization and retention hooks to compete as a product.",
+                presentation_quality: "The premise is understandable, but written documentation lacks architecture flowcharts, schema diagrams, and concrete demo links."
+            };
+
+            try {
+                const response = await fetch(`/api/evaluations/${evalId}`);
+                if (!response.ok) {
+                    document.getElementById('projectTitleDisplay').textContent = 'Evaluation Not Found';
+                    return;
+                }
+
+                const res = await response.json();
+                const evalData = res.data || {};
+
+                // Basic meta
+                const projectTitle = res.project_title || 'Project';
+                document.getElementById('projectTitleDisplay').textContent = projectTitle;
+                document.getElementById('projectRoleDisplay').textContent = res.role || 'Evaluator';
+                document.getElementById('overallScoreDisplay').textContent = Math.round(res.total_score || evalData.score || 0);
+
+                // Rubric Breakdown
+                const rubricContainer = document.getElementById('rubricContainer');
+                rubricContainer.innerHTML = '';
+                const breakdown = evalData.score_breakdown || {};
+                const rubricEntries = Object.entries(breakdown);
+
+                if (rubricEntries.length > 0) {
+                    rubricEntries.forEach(([key, val]) => {
+                        const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        
+                        let pct = 70;
+                        let reason = fallbackReasons[key] || "Evaluation score reflects alignment with industry criteria and project scope.";
+
+                        if (typeof val === 'number') {
+                            pct = val <= 10 ? val * 10 : val;
+                        } else if (val && typeof val === 'object') {
+                            pct = typeof val.score === 'number' ? (val.score <= 10 ? val.score * 10 : val.score) : 70;
+                            if (val.reason) {
+                                reason = val.reason;
+                            } else if (val.explanation) {
+                                reason = val.explanation;
+                            }
+                        }
+                        
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'rubric-item';
+                        itemDiv.innerHTML = `
+                            <div class="rubric-header">
+                                <span style="font-weight: 600;">${formattedKey}</span>
+                                <span class="rubric-score">${pct}/100</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill" style="width: ${pct}%;"></div>
+                            </div>
+                            <div class="rubric-desc" style="margin-top: 6px; font-size: 13.5px; color: var(--text-muted); line-height: 1.6;">${reason}</div>
+                        `;
+                        rubricContainer.appendChild(itemDiv);
+                    });
+                } else {
+                    rubricContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 14px;">No rubric breakdown data available.</div>';
+                }
+
+                // Role View Card
+                const roleViewCard = document.getElementById('roleViewCard');
+                const roleViewContent = document.getElementById('roleViewContent');
+                const roleView = evalData.role_view;
+
+                if (roleView && (roleView.scope || roleView.ideas_to_make_unique)) {
+                    roleViewCard.style.display = 'block';
+                    document.getElementById('roleViewTitle').textContent = roleView.title || `${(res.role || 'Evaluator')} View`;
+                    
+                    let ideasHtml = '';
+                    if (roleView.ideas_to_make_unique && roleView.ideas_to_make_unique.length > 0) {
+                        ideasHtml = `<div style="margin-top: 14px;"><strong>Ideas to make it unique:</strong><ul style="margin: 8px 0 0 18px; padding-left: 0; color: var(--text-muted);">` +
+                            roleView.ideas_to_make_unique.map(idea => `<li style="margin-bottom: 6px;">${idea}</li>`).join('') +
+                            `</ul></div>`;
+                    }
+
+                    let notesHtml = '';
+                    if (roleView.grading_notes) {
+                        notesHtml = `<div style="margin-top: 14px;"><strong>Grading / Evaluator Notes:</strong> <span style="color: var(--text-muted);">${roleView.grading_notes}</span></div>`;
+                    }
+
+                    roleViewContent.innerHTML = `
+                        <div><strong>Scope:</strong> <span style="color: var(--text-muted);">${roleView.scope || 'Scope is practical and achievable.'}</span></div>
+                        ${ideasHtml}
+                        ${notesHtml}
+                    `;
+                }
+
+                // Strengths
+                const strengthsList = document.getElementById('strengthsList');
+                strengthsList.innerHTML = '';
+                const strengths = evalData.strengths || [];
+                if (strengths.length > 0) {
+                    strengths.forEach(s => {
+                        const li = document.createElement('li');
+                        li.textContent = s;
+                        strengthsList.appendChild(li);
+                    });
+                } else {
+                    strengthsList.innerHTML = '<li>Clear problem definition and targeted use case.</li>';
+                }
+
+                // Weaknesses
+                const weaknessesList = document.getElementById('weaknessesList');
+                weaknessesList.innerHTML = '';
+                const weaknesses = evalData.weaknesses || [];
+                if (weaknesses.length > 0) {
+                    weaknesses.forEach(w => {
+                        const li = document.createElement('li');
+                        li.textContent = w;
+                        weaknessesList.appendChild(li);
+                    });
+                } else {
+                    weaknessesList.innerHTML = '<li>Architecture details and test coverage need further expansion.</li>';
+                }
+
+                // Improvement Roadmap
+                const roadmapContainer = document.getElementById('roadmapContainer');
+                roadmapContainer.innerHTML = '';
+                const roadmapItems = evalData.roadmap || evalData.recommendations || [];
+
+                if (roadmapItems.length > 0) {
+                    roadmapItems.forEach((item, idx) => {
+                        const isObj = typeof item === 'object' && item !== null;
+                        const title = isObj ? item.title : item;
+                        const desc = isObj ? (item.description || '') : '';
+                        const impact = isObj ? (item.impact || '5/5') : '4/5';
+                        const difficulty = isObj ? (item.difficulty || '2/5') : '2/5';
+                        const priority = isObj ? (item.priority || `Priority #${idx + 1}`) : `Priority #${idx + 1}`;
+
+                        const roadItem = document.createElement('div');
+                        roadItem.className = 'roadmap-item';
+                        roadItem.innerHTML = `
+                            <div class="roadmap-header">
+                                <div class="roadmap-title">${idx + 1}. ${title}</div>
+                                <div class="badges">
+                                    <span class="badge">Impact ${impact}</span>
+                                    <span class="badge">Difficulty ${difficulty}</span>
+                                    <span class="badge">${priority}</span>
+                                </div>
+                            </div>
+                            ${desc ? `<div class="roadmap-desc" style="margin-top: 6px; font-size: 13px; color: var(--text-muted); line-height: 1.5;">${desc}</div>` : ''}
+                        `;
+                        roadmapContainer.appendChild(roadItem);
+                    });
+                } else {
+                    roadmapContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 14px;">No roadmap steps recorded.</div>';
+                }
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('projectTitleDisplay').textContent = 'Error loading results';
+            }
+        });
+    </script>
+    <script src="/static/js/floating-background.js?v=7"></script>
+</body>
+</html>
