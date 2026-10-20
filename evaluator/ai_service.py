@@ -119,14 +119,15 @@ def evaluate_project_with_ai(title, description, user_role):
     """
 
     if GEMINI_API_KEY and GEMINI_API_KEY != 'dummy-key-for-now':
-        try:
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            response = model.generate_content(prompt)
-            json_text = response.text.strip().removeprefix('```json').removesuffix('```').strip()
-            evaluation_data = json.loads(json_text)
-            return evaluation_data
-        except Exception as e:
-            print(f"Error calling Gemini: {e}")
+        for model_name in ['gemini-1.5-flash', 'gemini-flash-latest', 'gemini-2.5-flash-lite', 'gemini-pro']:
+            try:
+                model = genai.GenerativeModel(model_name)
+                response = model.generate_content(prompt)
+                json_text = response.text.strip().removeprefix('```json').removesuffix('```').strip()
+                evaluation_data = json.loads(json_text)
+                return evaluation_data
+            except Exception as e:
+                print(f"Error calling Gemini model {model_name}: {e}")
 
     # Rich, explainable fallback tailored to the project details
     return get_contextual_evaluation(title, description, user_role, role_title)
